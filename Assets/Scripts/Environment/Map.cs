@@ -124,6 +124,7 @@ public class Map {
         e.mapCoord = coord;
         map[regionX, regionY].Add (e);
         numEntities++;
+        Debug.Log("Map:Add:" + e.name + ">>Region[" + regionX + "," + regionY + "]");
     }
 
     public void Remove (LivingEntity e, Coord coord) {
@@ -134,7 +135,7 @@ public class Map {
         int lastElementIndex = map[regionX, regionY].Count - 1;
         // If this entity is not last in the list, put the last entity in its place
         if (index != lastElementIndex) {
-
+            Debug.Log("Map:Remove:" + e.name + ">>Region[" + regionX + "," + regionY + "]");
             map[regionX, regionY][index] = map[regionX, regionY][lastElementIndex];
             map[regionX, regionY][index].mapIndex = e.mapIndex;
         }

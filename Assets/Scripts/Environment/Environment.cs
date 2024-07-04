@@ -35,12 +35,15 @@ public class Environment : MonoBehaviour {
     // array of visible tiles from any tile; value is Coord.invalid if no visible water tile
     static Coord[, ] closestVisibleWaterMap;
 
+    // Count all population (for indexing) ++
+    private int populationIndex;
     static System.Random prng;
     TerrainGenerator.TerrainData terrainData;
 
     static Dictionary<Species, Map> speciesMaps;
 
     void Start () {
+        populationIndex = 0; // reset population index ++
         prng = new System.Random ();
 
         Init ();
@@ -121,12 +124,16 @@ public class Environment : MonoBehaviour {
         return potentialMates;
     }
 
-    public static Surroundings Sense (Coord coord) {
-        var closestPlant = speciesMaps[Species.Plant].ClosestEntity (coord, Animal.maxViewDistance);
-        var surroundings = new Surroundings ();
-        surroundings.nearestFoodSource = closestPlant;
-        surroundings.nearestWaterTile = closestVisibleWaterMap[coord.x, coord.y];
+    public static Surroundings Sense (Animal animal, Coord coord) {
+        // var closestPlant = speciesMaps[Species.Plant].ClosestEntity (coord, Animal.maxViewDistance);
+        // var surroundings = new Surroundings ();
+        // surroundings.nearestFoodSource = closestPlant;
+        // surroundings.nearestWaterTile = closestVisibleWaterMap[coord.x, coord.y]; --
 
+        var closestFood = speciesMaps[animal.diet].ClosestEntity (coord, Animal.maxViewDistance);
+        var surroundings = new Surroundings ();
+        surroundings.nearestFoodSource = closestFood;
+        surroundings.nearestWaterTile = closestVisibleWaterMap[coord.x, coord.y];
         return surroundings;
     }
 
@@ -360,6 +367,7 @@ public class Environment : MonoBehaviour {
 
                 var entity = Instantiate (pop.prefab);
                 entity.Init (coord);
+                entity.name = entity.name + "-" + populationIndex++;
 
                 speciesMaps[entity.species].Add (entity, coord);
             }

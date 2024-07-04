@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Animal : LivingEntity {
+public class Animal : LivingEntity
+{
 
     public const int maxViewDistance = 10;
 
@@ -29,7 +30,7 @@ public class Animal : LivingEntity {
     float moveArcHeight = .2f;
 
     // State:
-    [Header ("State")]
+    [Header("State")]
     public float hunger;
     public float thirst;
 
@@ -53,196 +54,261 @@ public class Animal : LivingEntity {
     const float sqrtTwo = 1.4142f;
     const float oneOverSqrtTwo = 1 / sqrtTwo;
 
-    public override void Init (Coord coord) {
-        base.Init (coord);
+    public override void Init(Coord coord)
+    {
+        base.Init(coord);
         moveFromCoord = coord;
-        genes = Genes.RandomGenes (1);
+        genes = Genes.RandomGenes(1);
 
         material.color = (genes.isMale) ? maleColour : femaleColour;
 
-        ChooseNextAction ();
+        ChooseNextAction();
     }
 
 
 
-    protected virtual void Update () {
+    protected virtual void Update()
+    {
 
         // Increase hunger and thirst over time
         hunger += Time.deltaTime * 1 / timeToDeathByHunger;
         thirst += Time.deltaTime * 1 / timeToDeathByThirst;
 
         // Animate movement. After moving a single tile, the animal will be able to choose its next action
-        if (animatingMovement) {
-            AnimateMove ();
-        } else {
+        if (animatingMovement)
+        {
+            AnimateMove();
+        }
+        else
+        {
             // Handle interactions with external things, like food, water, mates
-            HandleInteractions ();
+            HandleInteractions();
             float timeSinceLastActionChoice = Time.time - lastActionChooseTime;
-            if (timeSinceLastActionChoice > timeBetweenActionChoices) {
-                ChooseNextAction ();
+            if (timeSinceLastActionChoice > timeBetweenActionChoices)
+            {
+                ChooseNextAction();
             }
         }
 
-        if (hunger >= 1) {
-            Die (CauseOfDeath.Hunger);
-        } else if (thirst >= 1) {
-            Die (CauseOfDeath.Thirst);
+        if (hunger >= 1)
+        {
+            Die(CauseOfDeath.Hunger);
+        }
+        else if (thirst >= 1)
+        {
+            Die(CauseOfDeath.Thirst);
         }
     }
 
     // Animals choose their next action after each movement step (1 tile),
     // or, when not moving (e.g interacting with food etc), at a fixed time interval
-    protected virtual void ChooseNextAction () {
+    protected virtual void ChooseNextAction()
+    {
         lastActionChooseTime = Time.time;
         // Get info about surroundings
 
         // Decide next action:
         // Eat if (more hungry than thirsty) or (currently eating and not critically thirsty)
         bool currentlyEating = currentAction == CreatureAction.Eating && foodTarget && hunger > 0;
-        if (hunger >= thirst || currentlyEating && thirst < criticalPercent) {
-            FindFood ();
+        if (hunger >= thirst || currentlyEating && thirst < criticalPercent)
+        {
+            FindFood();
         }
         // More thirsty than hungry
-        else {
-            FindWater ();
+        else
+        {
+            FindWater();
         }
 
-        Act ();
+        Act();
 
     }
 
-    protected virtual void FindFood () {
-        LivingEntity foodSource = Environment.SenseFood (coord, this, FoodPreferencePenalty);
-        if (foodSource) {
+    protected virtual void FindFood()
+    {
+        LivingEntity foodSource = Environment.SenseFood(coord, this, FoodPreferencePenalty);
+        if (foodSource)
+        {
             currentAction = CreatureAction.GoingToFood;
             foodTarget = foodSource;
-            CreatePath (foodTarget.coord);
+            CreatePath(foodTarget.coord);
 
-        } else {
+        }
+        else
+        {
             currentAction = CreatureAction.Exploring;
         }
     }
 
-    protected virtual void FindWater () {
-        Coord waterTile = Environment.SenseWater (coord);
-        if (waterTile != Coord.invalid) {
+    protected virtual void FindWater()
+    {
+        Coord waterTile = Environment.SenseWater(coord);
+        if (waterTile != Coord.invalid)
+        {
             currentAction = CreatureAction.GoingToWater;
             waterTarget = waterTile;
-            CreatePath (waterTarget);
+            CreatePath(waterTarget);
 
-        } else {
+        }
+        else
+        {
             currentAction = CreatureAction.Exploring;
         }
     }
 
     // When choosing from multiple food sources, the one with the lowest penalty will be selected
-    protected virtual int FoodPreferencePenalty (LivingEntity self, LivingEntity food) {
-        return Coord.SqrDistance (self.coord, food.coord);
+    protected virtual int FoodPreferencePenalty(LivingEntity self, LivingEntity food)
+    {
+        return Coord.SqrDistance(self.coord, food.coord);
     }
 
-    protected void Act () {
-        switch (currentAction) {
+    protected void Act()
+    {
+        switch (currentAction)
+        {
             case CreatureAction.Exploring:
-                StartMoveToCoord (Environment.GetNextTileWeighted (coord, moveFromCoord));
+                StartMoveToCoord(Environment.GetNextTileWeighted(coord, moveFromCoord));
                 break;
             case CreatureAction.GoingToFood:
-                if (Coord.AreNeighbours (coord, foodTarget.coord)) {
-                    LookAt (foodTarget.coord);
+                if (Coord.AreNeighbours(coord, foodTarget.coord))
+                {
+                    LookAt(foodTarget.coord);
                     currentAction = CreatureAction.Eating;
-                } else {
-                    StartMoveToCoord (path[pathIndex]);
+                }
+                else
+                {
+                    StartMoveToCoord(path[pathIndex]);
                     pathIndex++;
                 }
                 break;
             case CreatureAction.GoingToWater:
-                if (Coord.AreNeighbours (coord, waterTarget)) {
-                    LookAt (waterTarget);
+                if (Coord.AreNeighbours(coord, waterTarget))
+                {
+                    LookAt(waterTarget);
                     currentAction = CreatureAction.Drinking;
-                } else {
-                    StartMoveToCoord (path[pathIndex]);
+                }
+                else
+                {
+                    StartMoveToCoord(path[pathIndex]);
                     pathIndex++;
                 }
                 break;
         }
     }
 
-    protected void CreatePath (Coord target) {
+    protected void CreatePath(Coord target)
+    {
         // Create new path if current is not already going to target
-        if (path == null || pathIndex >= path.Length || (path[path.Length - 1] != target || path[pathIndex - 1] != moveTargetCoord)) {
-            path = EnvironmentUtility.GetPath (coord.x, coord.y, target.x, target.y);
+        if (path == null || pathIndex >= path.Length || (path[path.Length - 1] != target || path[pathIndex - 1] != moveTargetCoord))
+        {
+            path = EnvironmentUtility.GetPath(coord.x, coord.y, target.x, target.y);
             pathIndex = 0;
         }
     }
 
-    protected void StartMoveToCoord (Coord target) {
+    protected void StartMoveToCoord(Coord target)
+    {
         moveFromCoord = coord;
         moveTargetCoord = target;
         moveStartPos = transform.position;
         moveTargetPos = Environment.tileCentres[moveTargetCoord.x, moveTargetCoord.y];
         animatingMovement = true;
 
-        bool diagonalMove = Coord.SqrDistance (moveFromCoord, moveTargetCoord) > 1;
+        bool diagonalMove = Coord.SqrDistance(moveFromCoord, moveTargetCoord) > 1;
         moveArcHeightFactor = (diagonalMove) ? sqrtTwo : 1;
         moveSpeedFactor = (diagonalMove) ? oneOverSqrtTwo : 1;
 
-        LookAt (moveTargetCoord);
+        LookAt(moveTargetCoord);
     }
 
-    protected void LookAt (Coord target) {
-        if (target != coord) {
+    protected void LookAt(Coord target)
+    {
+        if (target != coord)
+        {
             Coord offset = target - coord;
-            transform.eulerAngles = Vector3.up * Mathf.Atan2 (offset.x, offset.y) * Mathf.Rad2Deg;
+            transform.eulerAngles = Vector3.up * Mathf.Atan2(offset.x, offset.y) * Mathf.Rad2Deg;
         }
     }
 
-    void HandleInteractions () {
-        if (currentAction == CreatureAction.Eating) {
-            if (foodTarget && hunger > 0) {
-                float eatAmount = Mathf.Min (hunger, Time.deltaTime * 1 / eatDuration);
-                eatAmount = ((Plant) foodTarget).Consume (eatAmount);
+    void HandleInteractions()
+    {
+        if (currentAction == CreatureAction.Eating)
+        {
+            if (foodTarget && hunger > 0)
+            {
+                float eatAmount = Mathf.Min(hunger, Time.deltaTime * 1 / eatDuration);
+                switch (diet)
+                {
+                    case Species.Plant:
+                        eatAmount = ((Plant)foodTarget).Consume(eatAmount);
+                        break;
+                    case Species.Rabbit:
+                        break;
+                }
                 hunger -= eatAmount;
             }
-        } else if (currentAction == CreatureAction.Drinking) {
-            if (thirst > 0) {
+
+
+        }
+        else if (currentAction == CreatureAction.Drinking)
+        {
+            if (thirst > 0)
+            {
                 thirst -= Time.deltaTime * 1 / drinkDuration;
-                thirst = Mathf.Clamp01 (thirst);
+                thirst = Mathf.Clamp01(thirst);
             }
         }
     }
 
-    void AnimateMove () {
+    void AnimateMove()
+    {
         // Move in an arc from start to end tile
-        moveTime = Mathf.Min (1, moveTime + Time.deltaTime * moveSpeed * moveSpeedFactor);
+        moveTime = Mathf.Min(1, moveTime + Time.deltaTime * moveSpeed * moveSpeedFactor);
         float height = (1 - 4 * (moveTime - .5f) * (moveTime - .5f)) * moveArcHeight * moveArcHeightFactor;
-        transform.position = Vector3.Lerp (moveStartPos, moveTargetPos, moveTime) + Vector3.up * height;
+        transform.position = Vector3.Lerp(moveStartPos, moveTargetPos, moveTime) + Vector3.up * height;
 
         // Finished moving
-        if (moveTime >= 1) {
-            Environment.RegisterMove (this, coord, moveTargetCoord);
+        if (moveTime >= 1)
+        {
+            Environment.RegisterMove(this, coord, moveTargetCoord);
             coord = moveTargetCoord;
 
             animatingMovement = false;
             moveTime = 0;
-            ChooseNextAction ();
+            ChooseNextAction();
         }
     }
 
-    void OnDrawGizmosSelected () {
-        if (Application.isPlaying) {
-            var surroundings = Environment.Sense (coord);
+    void OnDrawGizmosSelected()
+    {
+        if (Application.isPlaying)
+        {
+            var surroundings = Environment.Sense(this, coord);
             Gizmos.color = Color.white;
-            if (surroundings.nearestFoodSource != null) {
-                Gizmos.DrawLine (transform.position, surroundings.nearestFoodSource.transform.position);
+            if (surroundings.nearestFoodSource != null &&
+                surroundings.nearestFoodSource.species == diet)
+            {
+                Gizmos.DrawLine(transform.position, surroundings.nearestFoodSource.transform.position);
             }
-            if (surroundings.nearestWaterTile != Coord.invalid) {
-                Gizmos.DrawLine (transform.position, Environment.tileCentres[surroundings.nearestWaterTile.x, surroundings.nearestWaterTile.y]);
+            if (surroundings.nearestWaterTile != Coord.invalid)
+            {
+                Gizmos.DrawLine(transform.position, Environment.tileCentres[surroundings.nearestWaterTile.x, surroundings.nearestWaterTile.y]);
             }
 
-            if (currentAction == CreatureAction.GoingToFood) {
-                var path = EnvironmentUtility.GetPath (coord.x, coord.y, foodTarget.coord.x, foodTarget.coord.y);
+            if (currentAction == CreatureAction.GoingToFood)
+            {
+                var path = EnvironmentUtility.GetPath(coord.x, coord.y, foodTarget.coord.x, foodTarget.coord.y);
+                // Debug.Log(name + ":path[(" + coord.x + "," + coord.y + "),(" + foodTarget.coord.x + "," +
+                //     foodTarget.coord.y + ")]");
+                if (path == null)
+                {
+                    // Debug.Log("No valid path");
+                    return;
+                }
                 Gizmos.color = Color.black;
-                for (int i = 0; i < path.Length; i++) {
-                    Gizmos.DrawSphere (Environment.tileCentres[path[i].x, path[i].y], .2f);
+                for (int i = 0; i < path.Length; i++)
+                {
+                    Gizmos.DrawSphere(Environment.tileCentres[path[i].x, path[i].y], .2f);
                 }
             }
         }
